@@ -3,7 +3,13 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from .terrain import generate_reference_and_limits
+import sys
+
+sys.path.append(r'C:/Users/flora/Documents/year 3 engineering/B1 Engineering Computation/Scientific Coding/project/b1-coding-practical-mt24/uuv_mission')
+sys.path.append(r'C:/Users/flora/Documents/year 3 engineering/B1 Engineering Computation/Scientific Coding/project/b1-coding-practical-mt24/control')
+from terrain import generate_reference_and_limits
+from control.PDcontroller import PDController
+
 
 class Submarine:
     def __init__(self):
@@ -88,9 +94,9 @@ class Mission:
         return cls(reference, cave_height, cave_depth)
 
 class ClosedLoop:
-    def __init__(self, plant: Submarine, controller):
+    def __init__(self, plant: Submarine, PDController):
         self.plant = plant
-        self.controller = controller
+        self.controller = PDController
 
     def simulate(self,  mission: Mission, disturbances: np.ndarray) -> Trajectory:
 
@@ -105,7 +111,8 @@ class ClosedLoop:
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
-            # Call your controller here
+            reference_t = mission.reference[t]
+            actions[t] = self.controller.control_action(reference_t,observation_t)
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)
