@@ -1,8 +1,15 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-from .terrain import generate_reference_and_limits
+import sys
+
+sys.path.append(r'C:/Users/flora/Documents/year 3 engineering/B1 Engineering Computation/Scientific Coding/project/b1-coding-practical-mt24/uuv_mission')
+sys.path.append(r'C:/Users/flora/Documents/year 3 engineering/B1 Engineering Computation/Scientific Coding/project/b1-coding-practical-mt24/control')
+from terrain import generate_reference_and_limits
+from control.PDcontroller import PDController
+
 
 class Submarine:
     def __init__(self):
@@ -74,15 +81,22 @@ class Mission:
         return cls(reference, cave_height, cave_depth)
 
     @classmethod
-    def from_csv(cls, file_name: str):
-        # You are required to implement this method
-        pass
+    def from_csv(cls, mission: str):
+        # Read the mission.CSV file
+        data = pd.read_csv(mission)
 
+        # Extract the relevant columns
+        reference = data['reference'].values
+        cave_height = data['cave_height'].values
+        cave_depth = data['cave_depth'].values
+
+        # Create and return an instance of the Mission class
+        return cls(reference, cave_height, cave_depth)
 
 class ClosedLoop:
-    def __init__(self, plant: Submarine, controller):
+    def __init__(self, plant: Submarine, PDController):
         self.plant = plant
-        self.controller = controller
+        self.controller = PDController
 
     def simulate(self,  mission: Mission, disturbances: np.ndarray) -> Trajectory:
 
@@ -97,11 +111,14 @@ class ClosedLoop:
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
-            # Call your controller here
+            reference_t = mission.reference[t]
+            error = reference_t - observation_t
+            actions[t] = self.controller.control_action(error,self.plant.dt)
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)
         
-    def simulate_with_random_disturbances(self, mission: Mission, variance: float = 0.5) -> Trajectory:
+    def simulate_with_random_disturbances(self, mission: Mission, variance: float = 0.5)-> Trajectory:
+        print("simulate_with_random_disturbances method called")  # Debugging print statement
         disturbances = np.random.normal(0, variance, len(mission.reference))
         return self.simulate(mission, disturbances)
