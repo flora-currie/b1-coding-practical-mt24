@@ -112,11 +112,13 @@ class ClosedLoop:
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
             reference_t = mission.reference[t]
-            actions[t] = self.controller.control_action(reference_t,observation_t)
+            error = reference_t - observation_t
+            actions[t] = self.controller.control_action(error,self.plant.dt)
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)
         
-    def simulate_with_random_disturbances(self, mission: Mission, variance: float = 0.5) -> Trajectory:
+    def simulate_with_random_disturbances(self, mission: Mission, variance: float = 0.5)-> Trajectory:
+        print("simulate_with_random_disturbances method called")  # Debugging print statement
         disturbances = np.random.normal(0, variance, len(mission.reference))
         return self.simulate(mission, disturbances)

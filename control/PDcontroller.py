@@ -4,14 +4,10 @@ class PDController:
         self.KD = KD 
         self.prev_error = 0 
 
-    def control_action(self, reference: float, output: float):
-        #Compute the control action using PD control
-
-        #Calculate the error at time t:
-        error = reference - output
-
+    def control_action(self, error, dt) -> float:
+        derivative = (error - self.prev_error) / dt
         #Compute the control action as given by the tester formula 
-        control_act = self.KP*error + self.KD*(error - self.prev_error)
+        control_act = self.KP*error + self.KD*derivative
 
         #Store the current error for the next step
         self.prev_error = error 
